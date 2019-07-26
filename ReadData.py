@@ -15,7 +15,7 @@ def read_from_training_data(filename):
                     y_list.append([])
                 continue
             
-            if len(x_list[sentence_cnt]) >= 512:
+            if len(x_list[sentence_cnt]) >= 300:
                 sentence_cnt += 1
                 x_list.append([])
                 y_list.append([])
