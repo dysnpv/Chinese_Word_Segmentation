@@ -12,7 +12,7 @@ def Embedding(sentence):
     tokens_tensor = torch.tensor([indexed_tokens])
 #        tokens_tensor = tokens_tensor.to('cuda')
         
-    print(tokens_tensor.shape)
+#    print(tokens_tensor.shape)
         
     output = bert_model(tokens_tensor)
         
