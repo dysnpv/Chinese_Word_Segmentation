@@ -44,7 +44,7 @@ def read_from_testing_data(filename):
             x_list.append([])
     return x_list
 
-def SentencesReader(filename, file_type):
+def sentenceReader(filename, file_type):
     assert(file_type == 'testing' or file_type == 'training')
     if(file_type == 'testing'):
         return read_from_testing_data(filename)

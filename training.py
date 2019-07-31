@@ -49,6 +49,7 @@ def training(filename):
             print ('Epoch: [%d/%d], Loss: %.4f' % (epoch+1, num_epochs, loss.data[0]))
 """
       
+"""
 def training_scikit_learn(filename):
     num_epochs = 70
     num_test_epochs = 40
@@ -101,7 +102,10 @@ def training_scikit_learn(filename):
         # Why is this a torch tensor by default?
         positive_cnt += int(predictions[i] == y_test_list[i])
     print('%d out of %d predictions are correct. Accuracy %.4f%%' % (positive_cnt, predictions.shape[0], positive_cnt * 1.0 / predictions.shape[0]))
-        
-        
+"""
+
+def training(filename):
+    x_list, y_list = read_from_training_data(filename)
+    X = Embedding(x_list[:100])
         
         
