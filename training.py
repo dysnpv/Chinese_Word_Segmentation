@@ -134,10 +134,10 @@ def training(filename, csv_filename, num_sentences):
     num_epochs = 100
     input_size = 768
     output_size = 2
-    learning_rate = 0.001
+    learning_rate = 0.003
     batch_size = 32    
     
-    partition = int(IntergratedTensor.shape[0] * 2 / 3)
+    partition = int(IntergratedTensor.shape[0] * 3 / 4)
     print('Partition: %d' % partition)
     train_data = IntergratedTensor[: partition]
     test_data = IntergratedTensor[partition: ]

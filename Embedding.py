@@ -15,7 +15,7 @@ def Embedding(sentence):
         
 #    print(tokens_tensor.shape)
         
-    output = bert_model(tokens_tensor)
+    output = bert_model(tokens_tensor.long())
         
 #    print(len(output))
 #    print(output[0].shape)
