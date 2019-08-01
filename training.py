@@ -15,6 +15,27 @@ class LogisticRegression(torch.nn.Module):
     def forward(self, x):
         out = self.linear(x)
         return out
+    
+class DropoutClassifier(torch.nn.Module): 
+    def __init__(self, input_size, hidden_size, num_labels):
+        super(DropoutClassifier, self).__init__()
+        self.dropout1 = torch.nn.Dropout(p=0.2)
+        self.linear1 = torch.nn.Linear(input_size, hidden_size)
+        self.bn1 = torch.nn.BatchNorm1d(num_features=hidden_size)
+        #self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.dropout2 = torch.nn.Dropout(p=0.5)
+        self.linear3 = torch.nn.Linear(hidden_size, num_labels)
+
+    def forward(self, input_vec):
+        nextout = input_vec
+        nextout = self.dropout1(nextout)
+        nextout = self.linear1(nextout)
+        nextout = nextout.clamp(min=0)
+        #nextout = self.linear2(nextout).clamp(min=0)
+        nextout = self.dropout2(nextout)    
+        nextout = self.linear3(nextout)
+        return nextout
+    
 """
 def training(filename):
     x_list, y_list = read_from_training_data(filename)
@@ -113,7 +134,7 @@ def training(filename, csv_filename, num_sentences):
     num_epochs = 100
     input_size = 768
     output_size = 2
-    learning_rate = 0.01
+    learning_rate = 0.001
     batch_size = 32    
     
     partition = int(IntergratedTensor.shape[0] * 2 / 3)
@@ -121,7 +142,8 @@ def training(filename, csv_filename, num_sentences):
     train_data = IntergratedTensor[: partition]
     test_data = IntergratedTensor[partition: ]
     
-    model = LogisticRegression(input_size, output_size)
+#    model = LogisticRegression(input_size, output_size)
+    model = DropoutClassifier(input_size, 200, output_size)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate) 
     loss = torch.nn.CrossEntropyLoss()   
     
@@ -140,7 +162,18 @@ def training(filename, csv_filename, num_sentences):
             total_loss += loss_size.data.item()
             batch_cnt += 1
         print ('Epoch: [%d/%d], Average Loss: %.4f' % (epoch+1, num_epochs, total_loss / batch_cnt))
-    
+        
+        test_loader = batch_loader(test_data, batch_size)
+        num_characters = 0
+        correct_predictions = 0
+        for x_tensor, y_tensor in test_loader:
+            z = model(x_tensor)
+            for (i, output) in enumerate(z):
+                if y_tensor[i].long() == output.argmax():
+                    correct_predictions += 1
+                num_characters += 1
+        print('Test Accuracy: %.4f' % (correct_predictions * 1.0 / num_characters))
+    """
     test_loader = batch_loader(test_data, batch_size)
     
     num_characters = 0
@@ -152,5 +185,5 @@ def training(filename, csv_filename, num_sentences):
                 correct_predictions += 1
             num_characters += 1
     print('Test Accuracy: %.4f' % (correct_predictions * 1.0 / num_characters))
-                
+    """
     
