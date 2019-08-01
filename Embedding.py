@@ -11,7 +11,7 @@ def Embedding(sentence):
     
     indexed_tokens = tokenizer.convert_tokens_to_ids(sentence)
     tokens_tensor = torch.tensor([indexed_tokens])
-#        tokens_tensor = tokens_tensor.to('cuda')
+#    tokens_tensor = tokens_tensor.to('cuda')
         
 #    print(tokens_tensor.shape)
         
