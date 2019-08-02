@@ -1,4 +1,5 @@
 import torch
+import pandas as pd
 #from ReadData import read_from_training_data
 #from Embedding import Embedding
 from os import path
@@ -16,15 +17,15 @@ class LogisticRegression(torch.nn.Module):
         out = self.linear(x)
         return out
     
-class DropoutClassifier(torch.nn.Module): 
-    def __init__(self, input_size, hidden_size, num_labels):
+class DropoutClassifier(torch.nn.Module):
+    def __init__(self, input_size, output_size, hidden_size = 200):
         super(DropoutClassifier, self).__init__()
         self.dropout1 = torch.nn.Dropout(p=0.2)
         self.linear1 = torch.nn.Linear(input_size, hidden_size)
         self.bn1 = torch.nn.BatchNorm1d(num_features=hidden_size)
         #self.linear2 = nn.Linear(hidden_size, hidden_size)
         self.dropout2 = torch.nn.Dropout(p=0.5)
-        self.linear3 = torch.nn.Linear(hidden_size, num_labels)
+        self.linear3 = torch.nn.Linear(hidden_size, output_size)
 
     def forward(self, input_vec):
         nextout = input_vec
@@ -36,6 +37,76 @@ class DropoutClassifier(torch.nn.Module):
         nextout = self.linear3(nextout)
         return nextout
     
+    def skip_rows(self, i):
+        if i % 13 == 12:
+            return False
+        else:
+            return True
+    
+    def data_processer(self, t):
+#        print(t.shape)
+#        print(t)
+        return t
+
+class Dropout_AverageWithFirstLayer_Classifier(DropoutClassifier):
+    def skip_rows(self, i):
+        if i % 13 == 12 or i % 13 == 0:
+            return False
+        else:
+            return True
+    
+    def data_processer(self, t):
+#        print(t.shape)
+#        print(t)
+        X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
+#        print(X.shape)
+#        print(y.shape)
+        tensors_list = []
+        for i in range(0, X.shape[0], 2):
+            mean_x = torch.div(torch.add(X[i], X[i + 1]), 2)
+            processed_tensor = torch.unsqueeze(torch.cat((mean_x, y[i]), 0), 0)
+#            print(processed_tensor.shape)
+            assert(processed_tensor.shape == torch.Size([1, 769]))
+            tensors_list.append(processed_tensor)
+        return torch.cat(tensors_list, 0)
+    
+class Dropout_AverageLastFourLayers_Classifier(DropoutClassifier):
+    def skip_rows(self, i):
+        if i % 13 in range(9, 13):
+            return False
+        else:
+            return True
+        
+    def data_processer(self, t):
+#        print(t.shape)
+#        print(t)
+        X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
+#        print(X.shape)
+#        print(y.shape)
+        tensors_list = []
+        for i in range(0, X.shape[0], 4):
+            mean_x = (X[i] + X[i + 1] + X[i + 2] + X[i + 3]) / 4
+            processed_tensor = torch.unsqueeze(torch.cat((mean_x, y[i]), 0), 0)
+#            print(processed_tensor.shape)
+            assert(processed_tensor.shape == torch.Size([1, 769]))
+            tensors_list.append(processed_tensor)
+        return torch.cat(tensors_list, 0)
+    
+class Dropout_ConcatenateWithFirstLayer_Classifier(Dropout_AverageWithFirstLayer_Classifier):
+    def data_processer(self, t):
+#        print(t.shape)
+#        print(t)
+        X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
+#        print(X.shape)
+#        print(y.shape)
+        tensors_list = []
+        for i in range(0, X.shape[0], 2):
+            concatenated_x = torch.cat((X[i], X[i + 1]), 0)
+            processed_tensor = torch.unsqueeze(torch.cat((concatenated_x, y[i]), 0), 0)
+#            print(processed_tensor.shape)
+            assert(processed_tensor.shape == torch.Size([1, 768 * 2 + 1]))
+            tensors_list.append(processed_tensor)
+        return torch.cat(tensors_list, 0)    
 """
 def training(filename):
     x_list, y_list = read_from_training_data(filename)
@@ -126,25 +197,15 @@ def training_scikit_learn(filename):
     print('%d out of %d predictions are correct. Accuracy %.4f%%' % (positive_cnt, predictions.shape[0], positive_cnt * 1.0 / predictions.shape[0]))
 """
 
-def training(filename, csv_filename, num_sentences):
-    if not path.isfile(csv_filename):
-        create_csv_file(filename, csv_filename, num_sentences)
-    IntergratedTensor = load_from_csv(csv_filename)
-    
-    num_epochs = 100
-    input_size = 768
-    output_size = 2
-    learning_rate = 0.003
-    batch_size = 32    
+def train(csv_filename, classifier, num_epochs = 100, batch_size = 32, learning_rate = 0.001):
+    IntergratedTensor = load_from_csv(csv_filename, classifier.skip_rows, classifier.data_processer)
     
     partition = int(IntergratedTensor.shape[0] * 3 / 4)
     print('Partition: %d' % partition)
     train_data = IntergratedTensor[: partition]
     test_data = IntergratedTensor[partition: ]
     
-#    model = LogisticRegression(input_size, output_size)
-    model = DropoutClassifier(input_size, 200, output_size)
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate) 
+    optimizer = torch.optim.SGD(classifier.parameters(), lr=learning_rate) 
     loss = torch.nn.CrossEntropyLoss()   
     
     for epoch in range(num_epochs):
@@ -155,7 +216,7 @@ def training(filename, csv_filename, num_sentences):
             optimizer.zero_grad()
 #            print(x_tensor.shape)
 #            print(y_tensor.shape)
-            z = model(x_tensor)
+            z = classifier(x_tensor)
             loss_size = loss(z, y_tensor.long())
             loss_size.backward()
             optimizer.step()
@@ -167,23 +228,25 @@ def training(filename, csv_filename, num_sentences):
         num_characters = 0
         correct_predictions = 0
         for x_tensor, y_tensor in test_loader:
-            z = model(x_tensor)
+            z = classifier(x_tensor)
             for (i, output) in enumerate(z):
                 if y_tensor[i].long() == output.argmax():
                     correct_predictions += 1
                 num_characters += 1
         print('Test Accuracy: %.4f' % (correct_predictions * 1.0 / num_characters))
-    """
-    test_loader = batch_loader(test_data, batch_size)
     
-    num_characters = 0
-    correct_predictions = 0
-    for x_tensor, y_tensor in test_loader:
-        z = model(x_tensor)
-        for (i, output) in enumerate(z):
-            if y_tensor[i].long() == output.argmax():
-                correct_predictions += 1
-            num_characters += 1
-    print('Test Accuracy: %.4f' % (correct_predictions * 1.0 / num_characters))
-    """
+def train_simple_Dropout(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+    model = DropoutClassifier(768, 2, 200)
+    train(csv_filename, model, num_epochs, batch_size, lr)
     
+def train_Dropout_AverageWithFirstLayer(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+    model = Dropout_AverageWithFirstLayer_Classifier(768, 2, 200)
+    train(csv_filename, model, num_epochs, batch_size, lr)
+
+def train_Dropout_AverageLastFourLayers(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+    model = Dropout_AverageLastFourLayers_Classifier(768, 2, 200)
+    train(csv_filename, model, num_epochs, batch_size, lr)
+    
+def train_Dropout_ConcatenateWithFirstLayer(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+    model = Dropout_ConcatenateWithFirstLayer_Classifier(768 * 2, 2, 200)
+    train(csv_filename, model, num_epochs, batch_size, lr)

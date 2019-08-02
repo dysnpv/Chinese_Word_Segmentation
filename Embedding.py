@@ -5,7 +5,7 @@ from pytorch_transformers import BertTokenizer, BertModel
 def Embedding(sentence):
     tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
     
-    bert_model = BertModel.from_pretrained('bert-base-chinese')
+    bert_model = BertModel.from_pretrained('bert-base-chinese', output_hidden_states=True)
     bert_model.eval()
 #    bert_model.to('cuda')
     
@@ -17,11 +17,24 @@ def Embedding(sentence):
         
     output = bert_model(tokens_tensor.long())
         
-#    print(len(output))
-#    print(output[0].shape)
-#    print(output[1].shape)
+    """
+    print(len(output))
+    print(output[0].shape)
+    print(output[1].shape)
+    print(len(output[2]))
+    for i in range(len(output[2])):
+        print(output[2][i].shape)
+    """
+    assert(torch.equal(output[2][len(output[2]) - 1], output[0]))
 #    print(torch.stack([torch.squeeze(output[0][0][1]), torch.squeeze(output[1])]).shape)
-        
+    """
+    test = torch.cat(output[2], 0).transpose(0, 1)
+    print(test.shape)    
+    test = torch.reshape(test, (-1, 768))
+    print(test.shape)
+    for i in range(output[0].shape[1]):
+        assert(torch.equal(test[i * 13 + 12], output[0][0][i]))
+    """
     return output
 
 
