@@ -51,13 +51,3 @@ def sentenceReader(filename, file_type):
     if(file_type == 'training'):
         x_list, _ = read_from_training_data(filename)
         return x_list
-    
-    """
-def charactersReader(filename, file_type):
-    x_list, y_list = SentenceReader(filename, file_type)
-    character_x_list = []
-    character_y_list = []
-    for i in range(len(x_list)):
-        for j in range(len(x_list[i])):
-            character_x_
-            """

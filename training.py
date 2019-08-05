@@ -38,7 +38,7 @@ class DropoutClassifier(torch.nn.Module):
         return nextout
     
     def skip_rows(self, i):
-        if i % 13 == 12:
+        if i % 14 == 12:
             return False
         else:
             return True
@@ -50,7 +50,7 @@ class DropoutClassifier(torch.nn.Module):
 
 class Dropout_AverageWithFirstLayer_Classifier(DropoutClassifier):
     def skip_rows(self, i):
-        if i % 13 == 12 or i % 13 == 0:
+        if i % 14 == 12 or i % 14 == 0:
             return False
         else:
             return True
@@ -72,7 +72,7 @@ class Dropout_AverageWithFirstLayer_Classifier(DropoutClassifier):
     
 class Dropout_AverageLastFourLayers_Classifier(DropoutClassifier):
     def skip_rows(self, i):
-        if i % 13 in range(9, 13):
+        if i % 14 in range(9, 14):
             return False
         else:
             return True
@@ -107,41 +107,86 @@ class Dropout_ConcatenateWithFirstLayer_Classifier(Dropout_AverageWithFirstLayer
             assert(processed_tensor.shape == torch.Size([1, 768 * 2 + 1]))
             tensors_list.append(processed_tensor)
         return torch.cat(tensors_list, 0)    
-"""
-def training(filename):
-    x_list, y_list = read_from_training_data(filename)
-    myDataset = SentencesDataset(x_list[:int(len(x_list) / 2)], y_list[:int(len(x_list) / 2)])
     
-    num_epochs = int(len(x_list) / 2)
-    input_size = 768
-    output_size = 1
-    learning_rate = 0.01
-    batchSize = 1
+class Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_Classifier(DropoutClassifier):
+    def skip_rows(self, i):
+        if i % 14 == 12 or i % 14 == 0:
+            return False
+        else:
+            return True
     
-    model = LogisticRegression(input_size, output_size)
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate) 
+    def data_processer(self, t):
+#        print(t.shape)
+#        print(t)
+        X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
+#        print(X.shape)
+#        print(y.shape)
+        tensors_list = []
+        the_endofline_tensor = torch.zeros(768, dtype = torch.float)
+        for i in range(0, X.shape[0] - 2, 2):
+            if torch.equal(X[i + 2], the_endofline_tensor):
+#                print('Working')
+                continue
+            mean_x1 = torch.div(torch.add(X[i], X[i + 1]), 2)
+            mean_x2 = torch.div(torch.add(X[i + 3], X[i + 4]), 2)
+            processed_tensor = torch.unsqueeze(torch.cat((mean_x1, mean_x2, y[i]), 0), 0)
+#            print(processed_tensor.shape)
+            assert(processed_tensor.shape == torch.Size([1, 768 * 2 + 1]))
+            tensors_list.append(processed_tensor)
+        return torch.cat(tensors_list, 0)
     
-    train_loader = torch.utils.data.DataLoader(dataset = myDataset, batch_size = batchSize, shuffle=True)
+class Dropout_AverageWithFirstLayer_WithPairEmbedding_Classifier(DropoutClassifier):
+    def skip_rows(self, i):
+        if i % 14 == 0 or i % 14 == 12 or i % 14 == 13:
+            return False
+        else:
+            return True
     
-    for epoch in range(num_epochs):
-        for sentence, partitions in train_loader:
-            word_vectors = Embedding(sentence)
-            for i in range(len(sentence)):
-#                training_tensor = torch.unsqueeze(torch.stack([torch.squeeze(word_vectors[0][0][i]), torch.squeeze(word_vectors[1])]), 0)
-                training_tensor = torch.unsqueeze(torch.squeeze(word_vectors[0][0][i]), 0)
-                print(training_tensor.shape)
-                optimizer.zero_grad()
-                z = model(training_tensor)
-                print(z.shape)
-                z = torch.squeeze(z, 0)
-                print(z.shape)
-                print(partitions[i].shape)
-                loss = torch.nn.CrossEntropyLoss()(z, partitions[i])
-                loss.backward()
-                optimizer.step()
-            print ('Epoch: [%d/%d], Loss: %.4f' % (epoch+1, num_epochs, loss.data[0]))
-"""
-      
+    def data_processer(self, t):
+#        print(t.shape)
+#        print(t)
+        X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
+#        print(X.shape)
+#        print(y.shape)
+        tensors_list = []
+        the_endofline_tensor = torch.zeros(768, dtype = torch.float)
+        for i in range(0, X.shape[0] - 3, 3):
+            if torch.equal(X[i + 2], the_endofline_tensor):
+#                print('Working')
+                continue
+            mean_x = torch.div(torch.add(X[i], X[i + 1]), 2)
+            processed_tensor = torch.unsqueeze(torch.cat((mean_x, X[i + 2], y[i]), 0), 0)
+#            print(processed_tensor.shape)
+            assert(processed_tensor.shape == torch.Size([1, 768 * 2 + 1]))
+            tensors_list.append(processed_tensor)
+        return torch.cat(tensors_list, 0)
+
+class Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding_Classifier(DropoutClassifier):
+    def skip_rows(self, i):
+        if i % 14 == 0 or i % 14 == 12 or i % 14 == 13:
+            return False
+        else:
+            return True
+    
+    def data_processer(self, t):
+#        print(t.shape)
+#        print(t)
+        X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
+#        print(X.shape)
+#        print(y.shape)
+        tensors_list = []
+        the_endofline_tensor = torch.zeros(768, dtype = torch.float)
+        for i in range(0, X.shape[0] - 3, 3):
+            if torch.equal(X[i + 2], the_endofline_tensor):
+#                print('Working')
+                continue
+            mean_x1 = torch.div(torch.add(X[i], X[i + 1]), 2)
+            mean_x2 = torch.div(torch.add(X[i + 3], X[i + 4]), 2)
+            processed_tensor = torch.unsqueeze(torch.cat((mean_x1, mean_x2, X[i + 2], y[i]), 0), 0)
+#            print(processed_tensor.shape)
+            assert(processed_tensor.shape == torch.Size([1, 768 * 3 + 1]))
+            tensors_list.append(processed_tensor)
+        return torch.cat(tensors_list, 0)
 """
 def training_scikit_learn(filename):
     num_epochs = 70
@@ -250,3 +295,15 @@ def train_Dropout_AverageLastFourLayers(csv_filename, num_epochs = 100, batch_si
 def train_Dropout_ConcatenateWithFirstLayer(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
     model = Dropout_ConcatenateWithFirstLayer_Classifier(768 * 2, 2, 200)
     train(csv_filename, model, num_epochs, batch_size, lr)
+    
+def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+    model = Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_Classifier(768 * 2, 2, 200)
+    train(csv_filename, model, num_epochs, batch_size, lr)    
+    
+def train_Dropout_AverageWithFirstLayer_WithPairEmbedding_Classifier(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+    model = Dropout_AverageWithFirstLayer_WithPairEmbedding_Classifier(768 * 2, 2, 200)
+    train(csv_filename, model, num_epochs, batch_size, lr)    
+    
+def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding_Classifier(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+    model = Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding_Classifier(768 * 3, 2, 200)
+    train(csv_filename, model, num_epochs, batch_size, lr)        

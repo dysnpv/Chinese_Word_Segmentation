@@ -1,4 +1,3 @@
-from torch.utils.data import Dataset
 from ReadData import read_from_training_data
 import torch
 import pandas as pd
@@ -6,30 +5,9 @@ from Embedding import Embedding
 import random
 import numpy as np
 
-"""
-class SentencesDataset(Dataset):
-    def __init__(self, x_tuple, y_list):
-        self.x_tuple = x_tuple
-        self.y_list = y_list
-    def __len__(self):
-        return len(self.x_tuple)
-    def __getitem__(self, index):
-        return self.x_tuple[index], self.y_list[index]
-"""        
-        
-"""
-class charactersDataset(Dataset):
-    def __init__(self, x_tuple, y_list):
-        self.x_tuple = x_tuple
-        self.y_list = y_list
-    def __len__(self):
-        return len(self.x_tuple)
-    def __getitem__(self, index):
-        return self.x_tuple[index], self.y_list[index]
-"""
-
 def create_csv_file(filename, csvfile, num_sentences):
     x_tuple, y_list = read_from_training_data(filename)
+    print("There are %d sentences in this file" % len(x_tuple))
     z = list(zip(x_tuple, y_list))
     random.shuffle(z)
     x_tuple, y_tuple = zip(*z)
@@ -42,12 +20,24 @@ def create_csv_file(filename, csvfile, num_sentences):
                 print("Embedded sentences %d / %d." % (i, num_sentences))
             if i >= num_sentences:
                 break
+            
+#            print(sentence)
             output = Embedding(x_tuple[i])
+            output = list(output)
+            output[2] = list(output[2])
+            
+            pair_characters_layer = []
+            for j in range(len(sentence) - 1):
+                this_pair = [sentence[j], sentence[j + 1]]
+                paired_output = Embedding(this_pair)
+                pair_characters_layer.append(torch.reshape(paired_output[1], (1, 1, 768)))
+            pair_characters_layer.append(torch.zeros((1, 1, 768), dtype = torch.float))
+            output[2].append(torch.cat(pair_characters_layer, 1))
             X = torch.cat(output[2], 0).transpose(0, 1)
             X = torch.reshape(X, (-1, 768))
             for j in range(output[0].shape[1]):
-                assert(torch.equal(X[j * 13 + 12], output[0][0][j]))
-            y = np.repeat(np.array(y_tuple[i], dtype = float), 13)
+                assert(torch.equal(X[j * 14 + 12], output[0][0][j]))
+            y = np.repeat(np.array(y_tuple[i], dtype = float), 14)
 #            print(y)
             y = torch.FloatTensor(y)
             y = torch.reshape(y, (-1, 1))
