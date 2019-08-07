@@ -305,10 +305,10 @@ def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter(csv_filenam
     model = Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_Classifier(768 * 2, 2, 200)
     train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)
     
-def train_Dropout_AverageWithFirstLayer_WithPairEmbedding_Classifier(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
+def train_Dropout_AverageWithFirstLayer_WithPairEmbedding(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
     model = Dropout_AverageWithFirstLayer_WithPairEmbedding_Classifier(768 * 2, 2, 200)
     train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)
     
-def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding_Classifier(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
+def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
     model = Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding_Classifier(768 * 3, 2, 200)
     train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)
