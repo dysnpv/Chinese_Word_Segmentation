@@ -128,7 +128,7 @@ class Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_Classifier(Drop
 #                print('Working')
                 continue
             mean_x1 = torch.div(torch.add(X[i], X[i + 1]), 2)
-            mean_x2 = torch.div(torch.add(X[i + 3], X[i + 4]), 2)
+            mean_x2 = torch.div(torch.add(X[i + 2], X[i + 3]), 2)
             processed_tensor = torch.unsqueeze(torch.cat((mean_x1, mean_x2, y[i]), 0), 0)
 #            print(processed_tensor.shape)
             assert(processed_tensor.shape == torch.Size([1, 768 * 2 + 1]))
@@ -242,13 +242,18 @@ def training_scikit_learn(filename):
     print('%d out of %d predictions are correct. Accuracy %.4f%%' % (positive_cnt, predictions.shape[0], positive_cnt * 1.0 / predictions.shape[0]))
 """
 
-def train(csv_filename, classifier, num_epochs = 100, batch_size = 32, learning_rate = 0.001):
+def train(csv_filename, classifier, test_csv_filename = "", num_epochs = 100, batch_size = 32, learning_rate = 0.001):
     IntergratedTensor = load_from_csv(csv_filename, classifier.skip_rows, classifier.data_processer)
     
-    partition = int(IntergratedTensor.shape[0] * 3 / 4)
-    print('Partition: %d' % partition)
-    train_data = IntergratedTensor[: partition]
-    test_data = IntergratedTensor[partition: ]
+    if test_csv_filename == "":
+        partition = int(IntergratedTensor.shape[0] * 3 / 4)
+        train_data = IntergratedTensor[: partition]
+        test_data = IntergratedTensor[partition: ]
+    else:
+        train_data = IntergratedTensor
+        test_data = load_from_csv(test_csv_filename, classifier.skip_rows, classifier.data_processer)
+    
+    print("Training data size: %d. Testing data size: %d" % (len(train_data), len(test_data)))
     
     optimizer = torch.optim.SGD(classifier.parameters(), lr=learning_rate) 
     loss = torch.nn.CrossEntropyLoss()   
@@ -280,30 +285,30 @@ def train(csv_filename, classifier, num_epochs = 100, batch_size = 32, learning_
                 num_characters += 1
         print('Test Accuracy: %.4f' % (correct_predictions * 1.0 / num_characters))
     
-def train_simple_Dropout(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+def train_simple_Dropout(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
     model = DropoutClassifier(768, 2, 200)
-    train(csv_filename, model, num_epochs, batch_size, lr)
+    train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)
     
-def train_Dropout_AverageWithFirstLayer(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+def train_Dropout_AverageWithFirstLayer(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
     model = Dropout_AverageWithFirstLayer_Classifier(768, 2, 200)
-    train(csv_filename, model, num_epochs, batch_size, lr)
+    train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)
 
-def train_Dropout_AverageLastFourLayers(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+def train_Dropout_AverageLastFourLayers(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
     model = Dropout_AverageLastFourLayers_Classifier(768, 2, 200)
-    train(csv_filename, model, num_epochs, batch_size, lr)
+    train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)
     
-def train_Dropout_ConcatenateWithFirstLayer(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+def train_Dropout_ConcatenateWithFirstLayer(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
     model = Dropout_ConcatenateWithFirstLayer_Classifier(768 * 2, 2, 200)
-    train(csv_filename, model, num_epochs, batch_size, lr)
+    train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)
     
-def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
     model = Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_Classifier(768 * 2, 2, 200)
-    train(csv_filename, model, num_epochs, batch_size, lr)    
+    train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)
     
-def train_Dropout_AverageWithFirstLayer_WithPairEmbedding_Classifier(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+def train_Dropout_AverageWithFirstLayer_WithPairEmbedding_Classifier(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
     model = Dropout_AverageWithFirstLayer_WithPairEmbedding_Classifier(768 * 2, 2, 200)
-    train(csv_filename, model, num_epochs, batch_size, lr)    
+    train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)
     
-def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding_Classifier(csv_filename, num_epochs = 100, batch_size = 32, lr = 0.001):
+def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding_Classifier(csv_filename, test_csv_filename = "", num_epochs = 100, batch_size = 32, lr = 0.001):
     model = Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding_Classifier(768 * 3, 2, 200)
-    train(csv_filename, model, num_epochs, batch_size, lr)        
+    train(csv_filename, model, test_csv_filename, num_epochs, batch_size, lr)

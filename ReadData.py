@@ -1,4 +1,6 @@
 import torch
+from pytorch_transformers import BertTokenizer
+import nltk.data
 
 def read_from_training_data(filename):
     characters = open(filename).read()
@@ -51,3 +53,47 @@ def sentenceReader(filename, file_type):
     if(file_type == 'training'):
         x_list, _ = read_from_training_data(filename)
         return x_list
+    
+def ReadEnglish(filename):
+    characters = open(filename).read()
+    split_tool = nltk.data.load('tokenizers/punkt/english.pickle')
+    sentences = split_tool.tokenize(characters)
+    tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case = False)
+    i = 0
+    x_list = []
+    y_list = []
+    while i < len(sentences):
+        if '#' in sentences[i]:
+            del sentences[i]
+            continue
+        # We just discard sentences that contain names:
+        if '.' in sentences[i][:(len(sentences[i]) - 1)]:
+            del sentences[i]
+            continue
+        processed_sentence = ""
+        for j in range(len(sentences[i])):
+            if sentences[i][j] == ',' or sentences[i][j] == '.' or sentences[i][j] == ':' or sentences[i][j] == ';' or sentences[i][j] == '"':
+                processed_sentence = processed_sentence + ' ' + sentences[i][j] + ' '
+            else:
+                processed_sentence += sentences[i][j]
+#        without_space = sentences[i].replace(" ", "")
+#        print(without_space)
+#        print(nltk.word_tokenize(sentences[i]))
+        x_list.append([])
+        y_list.append([])
+        tokenized_text = tokenizer.tokenize(sentences[i])
+        x_list[i] = tokenized_text
+#        print(tokenized_text)
+        pos = 0
+        for j in range(len(tokenized_text) - 1):
+            length = len(tokenized_text[j].replace('#', ''))
+            pos += length
+            if processed_sentence[pos] == ' ' or processed_sentence[pos] == '\n':
+                y_list[i].append(True)
+                while processed_sentence[pos] == ' ' or processed_sentence[pos] == '\n':
+                    pos += 1
+            else:
+                y_list[i].append(False)
+        y_list[i].append(True)
+        i += 1
+    return x_list, y_list

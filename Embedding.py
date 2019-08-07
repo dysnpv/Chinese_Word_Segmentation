@@ -1,9 +1,11 @@
 import torch
 from pytorch_transformers import BertTokenizer, BertModel
 
-tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
+#tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
+#bert_model = BertModel.from_pretrained('bert-base-chinese', output_hidden_states=True)
 
-bert_model = BertModel.from_pretrained('bert-base-chinese', output_hidden_states=True)
+tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case = False)
+bert_model = BertModel.from_pretrained('bert-base-multilingual-cased', do_lower_case = False, output_hidden_states=True)
 bert_model.eval()
 #    bert_model.to('cuda')
     

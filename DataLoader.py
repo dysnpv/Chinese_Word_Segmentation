@@ -1,12 +1,18 @@
-from ReadData import read_from_training_data
+from ReadData import read_from_training_data, ReadEnglish
 import torch
 import pandas as pd
 from Embedding import Embedding
 import random
 import numpy as np
 
-def create_csv_file(filename, csvfile, num_sentences):
-    x_tuple, y_list = read_from_training_data(filename)
+def create_csv_file(filename, csvfile, num_sentences, language_type = "Chinese"):
+    if language_type == "Chinese":
+        x_tuple, y_list = read_from_training_data(filename)
+    elif language_type == "English":
+        x_tuple, y_list = ReadEnglish(filename)
+    else:
+        print("Wrong lauguage type given")
+        return
     print("There are %d sentences in this file" % len(x_tuple))
     z = list(zip(x_tuple, y_list))
     random.shuffle(z)
@@ -54,7 +60,7 @@ def load_from_csv(csv_file, skip_rows_function, data_processer):
 #    print(X.shape)
 #    print(y.shape)
     IntergratedTensor = data_processer(IntergratedTensor)
-    print('# of characters: {}'.format(IntergratedTensor.shape[0]))
+    print('# of tokens: {}'.format(IntergratedTensor.shape[0]))
     return IntergratedTensor
 
 def batch_loader(IntergratedTensor, batch_size):
