@@ -44,7 +44,7 @@ def read_from_testing_data(filename):
         if characters[i] == '。' or characters[i] == '！' or characters[i] == '；':
             sentence_cnt += 1
             x_list.append([])
-    return x_list
+    return [x for x in x_list if x != []]
 
 def sentenceReader(filename, file_type):
     assert(file_type == 'testing' or file_type == 'training')

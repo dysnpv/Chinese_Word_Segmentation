@@ -1,11 +1,11 @@
-from ReadData import read_from_training_data, ReadEnglish
+from ReadData import read_from_training_data, read_from_testing_data, ReadEnglish
 import torch
 import pandas as pd
 from Embedding import Embedding
 import random
 import numpy as np
 
-def create_csv_file(filename, csvfile, num_sentences, language_type = "Chinese"):
+def create_csv_file(filename, csvfile, num_sentences, language_type = "Chinese", is_random = True, eliminate_ones = True):
     if language_type == "Chinese":
         x_tuple, y_list = read_from_training_data(filename)
     elif language_type == "English":
@@ -14,12 +14,13 @@ def create_csv_file(filename, csvfile, num_sentences, language_type = "Chinese")
         print("Wrong lauguage type given")
         return
     print("There are %d sentences in this file" % len(x_tuple))
-    z = list(zip(x_tuple, y_list))
-    random.shuffle(z)
-    x_tuple, y_tuple = zip(*z)
+    if is_random:
+        z = list(zip(x_tuple, y_list))
+        random.shuffle(z)
+        x_tuple, y_tuple = zip(*z)
     with open(csvfile, 'w') as outhandle:
         for i, sentence in enumerate(x_tuple):
-            if len(sentence) == 1:
+            if len(sentence == 0) or (len(sentence) == 1 and eliminate_ones):
                 num_sentences += 1
                 continue
             if i % 20 == 0:
@@ -50,6 +51,33 @@ def create_csv_file(filename, csvfile, num_sentences, language_type = "Chinese")
             IntergratedTensor = torch.cat((X, y), 1)
             assert(IntergratedTensor.shape[1] == 769)
             df = pd.DataFrame(IntergratedTensor.detach().numpy())
+            outhandle.write(df.to_csv(header=False, index=False))
+            
+def create_test_csv(filename, csv_file, num_sentences):
+    x_tuple = read_from_testing_data(filename)
+    print("There are %d sentences in this file" % len(x_tuple))
+    with open(csv_file, 'w') as outhandle:
+        for i, sentence in enumerate(x_tuple):
+            if i % 20 == 0:
+                print("Embedded sentences %d / %d." % (i, num_sentences))
+            if i >= num_sentences:
+                break
+#            print(sentence)
+            output = Embedding(x_tuple[i])
+            output = list(output)
+            output[2] = list(output[2])
+            pair_characters_layer = []
+            for j in range(len(sentence) - 1):
+                this_pair = [sentence[j], sentence[j + 1]]
+                paired_output = Embedding(this_pair)
+                pair_characters_layer.append(torch.reshape(paired_output[1], (1, 1, 768)))
+            pair_characters_layer.append(torch.zeros((1, 1, 768), dtype = torch.float))
+            output[2].append(torch.cat(pair_characters_layer, 1))
+            X = torch.cat(output[2], 0).transpose(0, 1)
+            X = torch.reshape(X, (-1, 768))
+            for j in range(output[0].shape[1]):
+                assert(torch.equal(X[j * 14 + 12], output[0][0][j]))
+            df = pd.DataFrame(X.detach().numpy())
             outhandle.write(df.to_csv(header=False, index=False))
             
 def load_from_csv(csv_file, skip_rows_function, data_processer):
