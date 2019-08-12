@@ -340,9 +340,9 @@ def prepare_script(training_csv, testing_csv, test_file, output_filename = 'resu
     
     test_data = load_from_csv(testing_csv, model.skip_rows, model.test_data_processor)
     characters = open(test_file).read()
-    
+#    print(characters)
     x_list = read_from_testing_data(test_file)
-    
+#    print(x_list)
     output = open(output_filename, "w+")
     
     sentence_id = 0
@@ -350,10 +350,12 @@ def prepare_script(training_csv, testing_csv, test_file, output_filename = 'resu
     character_id = 0
     for x_tensor in test_data:
         # if this is the last token:
-        if token_id == len(x_list[sentence_id]) - 1:
+        while token_id == len(x_list[sentence_id]) - 1:
             output.write(characters[character_id])
+#            print("space: %d %c" % (character_id, characters[character_id]))
             output.write("  ")
             if characters[character_id + 1] == '\n':
+#                print("end of line: %d %d %d" % (sentence_id, token_id, character_id))
                 output.write("\n")
                 character_id += 1
             token_id = 0

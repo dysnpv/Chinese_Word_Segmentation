@@ -20,7 +20,7 @@ def create_csv_file(filename, csvfile, num_sentences, language_type = "Chinese",
         x_tuple, y_tuple = zip(*z)
     with open(csvfile, 'w') as outhandle:
         for i, sentence in enumerate(x_tuple):
-            if len(sentence == 0) or (len(sentence) == 1 and eliminate_ones):
+            if len(sentence) == 0 or (len(sentence) == 1 and eliminate_ones):
                 num_sentences += 1
                 continue
             if i % 20 == 0:
@@ -38,20 +38,22 @@ def create_csv_file(filename, csvfile, num_sentences, language_type = "Chinese",
                 this_pair = [sentence[j], sentence[j + 1]]
                 paired_output = Embedding(this_pair)
                 pair_characters_layer.append(torch.reshape(paired_output[1], (1, 1, 768)))
-            pair_characters_layer.append(torch.zeros((1, 1, 768), dtype = torch.float))
+            pair_characters_layer.append(torch.zeros((1, 1, 768), dtype = torch.float).to('cuda'))
             output[2].append(torch.cat(pair_characters_layer, 1))
             X = torch.cat(output[2], 0).transpose(0, 1)
             X = torch.reshape(X, (-1, 768))
+            X.to('cuda')
             for j in range(output[0].shape[1]):
                 assert(torch.equal(X[j * 14 + 12], output[0][0][j]))
             y = np.repeat(np.array(y_tuple[i], dtype = float), 14)
 #            print(y)
-            y = torch.FloatTensor(y)
+            y = torch.FloatTensor(y).to('cuda')
             y = torch.reshape(y, (-1, 1))
             IntergratedTensor = torch.cat((X, y), 1)
             assert(IntergratedTensor.shape[1] == 769)
-            df = pd.DataFrame(IntergratedTensor.detach().numpy())
+            df = pd.DataFrame(IntergratedTensor.cpu().detach().numpy())
             outhandle.write(df.to_csv(header=False, index=False))
+    torch.cuda.empty_cache()
             
 def create_test_csv(filename, csv_file, num_sentences):
     x_tuple = read_from_testing_data(filename)
@@ -71,14 +73,15 @@ def create_test_csv(filename, csv_file, num_sentences):
                 this_pair = [sentence[j], sentence[j + 1]]
                 paired_output = Embedding(this_pair)
                 pair_characters_layer.append(torch.reshape(paired_output[1], (1, 1, 768)))
-            pair_characters_layer.append(torch.zeros((1, 1, 768), dtype = torch.float))
+            pair_characters_layer.append(torch.zeros((1, 1, 768), dtype = torch.float).to('cuda'))
             output[2].append(torch.cat(pair_characters_layer, 1))
             X = torch.cat(output[2], 0).transpose(0, 1)
             X = torch.reshape(X, (-1, 768))
             for j in range(output[0].shape[1]):
                 assert(torch.equal(X[j * 14 + 12], output[0][0][j]))
-            df = pd.DataFrame(X.detach().numpy())
+            df = pd.DataFrame(X.cpu().detach().numpy())
             outhandle.write(df.to_csv(header=False, index=False))
+    torch.cuda.empty_cache()
             
 def load_from_csv(csv_file, skip_rows_function, data_processer):
     print('loading from CSV file.')

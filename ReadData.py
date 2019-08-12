@@ -1,4 +1,3 @@
-import torch
 from pytorch_transformers import BertTokenizer
 import nltk.data
 
@@ -8,6 +7,7 @@ def read_from_training_data(filename):
     sentence_cnt = 0
     x_list = [[]]
     y_list = [[]]
+    i = 0
     for i in range(len(characters)):
         if not characters[i] == ' ':
             if characters[i] == '\n':
@@ -17,17 +17,24 @@ def read_from_training_data(filename):
                     y_list.append([])
                 continue
             
-            if len(x_list[sentence_cnt]) >= 300:
-                sentence_cnt += 1
-                x_list.append([])
-                y_list.append([])
-            
             y_list[sentence_cnt].append((characters[i + 1] == ' '))
             x_list[sentence_cnt].append(characters[i])
+            
             if characters[i] == '。' or characters[i] == '！' or characters[i] == '；':
                 sentence_cnt += 1
                 x_list.append([])
                 y_list.append([])
+                
+    i = 0
+    l = len(x_list)
+    while i < l:
+        if(len(x_list[i])) > 512:
+            del x_list[i]
+            del y_list[i]
+            i -= 1
+            l -= 1
+        i += 1
+            
     return x_list, y_list
 
 def read_from_testing_data(filename):
@@ -41,9 +48,11 @@ def read_from_testing_data(filename):
                 x_list.append([])
             continue
         x_list[sentence_cnt].append(characters[i])
+        
         if characters[i] == '。' or characters[i] == '！' or characters[i] == '；':
             sentence_cnt += 1
             x_list.append([])
+        
     return [x for x in x_list if x != []]
 
 def sentenceReader(filename, file_type):
