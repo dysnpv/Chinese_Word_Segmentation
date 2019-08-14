@@ -1,6 +1,23 @@
 from pytorch_transformers import BertTokenizer
 import nltk.data
 
+def is_english(character):
+    if 'A' <= character and character <= 'Z':
+        return True
+    if 'Ａ' <= character and character <= 'Ｚ':
+        return True
+    if 'a' <= character and character <= 'z':
+        return True
+    if 'ａ' <= character and character <= 'ｚ':
+        return True
+    if '0' <= character and character <= '9':
+        return True
+    if '０' <= character and character <= '９':
+        return True
+    if character == '.' or character == '．' or character == '%' or character == '％':
+        return True
+    return False
+
 def read_from_training_data(filename):
     characters = open(filename).read()
     #x_list is a list of sentences, which means x_list is a 2-d array
@@ -8,7 +25,20 @@ def read_from_training_data(filename):
     x_list = [[]]
     y_list = [[]]
     i = 0
+    english_before = False
     for i in range(len(characters)):
+        if is_english(characters[i]):
+            if english_before:
+                continue
+            else:
+                english_before = True
+                continue
+        else:
+            if english_before:
+                x_list[sentence_cnt].append('#')
+                y_list[sentence_cnt].append(characters[i] == ' ')
+                english_before = False
+                
         if not characters[i] == ' ':
             if characters[i] == '\n':
                 if not len(x_list[sentence_cnt]) == 0:
@@ -16,6 +46,8 @@ def read_from_training_data(filename):
                     x_list.append([])
                     y_list.append([])
                 continue
+            
+
             
             y_list[sentence_cnt].append((characters[i + 1] == ' '))
             x_list[sentence_cnt].append(characters[i])
@@ -41,7 +73,23 @@ def read_from_testing_data(filename):
     characters = open(filename).read()
     sentence_cnt = 0
     x_list = [[]]
+    english_before = False
+#    map_for_hash = {}
+#    hash_string = ""
     for i in range(len(characters)):
+        if is_english(characters[i]):
+ #           hash_string += characters[i]
+            if english_before:
+                continue
+            else:
+                english_before = True
+                continue
+        else:
+            if english_before:
+                x_list[sentence_cnt].append('#')
+#                map_for_hash[(sentence_cnt, len(x_list[sentence_cnt]) - 1)] = hash_string
+                english_before = False
+#                hash_string = ""
         if characters[i] == '\n':
             if not len(x_list[sentence_cnt]) == 0:
                 sentence_cnt += 1

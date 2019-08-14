@@ -83,6 +83,18 @@ def create_test_csv(filename, csv_file, num_sentences):
             outhandle.write(df.to_csv(header=False, index=False))
     torch.cuda.empty_cache()
             
+def create_test_file(filename, output_file, num_sentences):
+    chars = open(filename).read()
+    cnt = 0
+    output = open(output_file, "w+")
+    for c in chars:
+        output.write(c)
+        if c == '\n':
+            cnt += 1
+        if cnt >= num_sentences:
+            break
+    output.close()
+    
 def load_from_csv(csv_file, skip_rows_function, data_processer):
     print('loading from CSV file.')
     IntergratedTensor = torch.tensor(pd.read_csv(csv_file, skiprows = skip_rows_function, header=None).values).float()
@@ -105,3 +117,61 @@ def batch_loader(IntergratedTensor, batch_size):
 #    print(y.shape)
     for i in range(0, len(shuffled_IntergratedTensor), batch_size):
         yield X[i:i+batch_size], y[i:i+batch_size]
+
+def convert_train_to_test(train_file, test_file):
+    train_chars = open(train_file).read()        
+    output = open(test_file, "w+")
+    for c in train_chars:
+        if c != ' ':
+            output.write(c)
+    output.close()
+"""
+def quick_train_embedding(filename, csvfile, num_sentences, language_type = "Chinese", is_random = True, eliminate_ones = True):
+    if language_type == "Chinese":
+        x_tuple, y_list = read_from_training_data(filename)
+    elif language_type == "English":
+        x_tuple, y_list = ReadEnglish(filename)
+    else:
+        print("Wrong lauguage type given")
+        return
+    print("There are %d sentences in this file" % len(x_tuple))
+    if is_random:
+        z = list(zip(x_tuple, y_list))
+        random.shuffle(z)
+        x_tuple, y_tuple = zip(*z)
+    with open(csvfile, 'w') as outhandle:
+        for i, sentence in enumerate(x_tuple):
+            if len(sentence) == 0 or (len(sentence) == 1 and eliminate_ones):
+                num_sentences += 1
+                continue
+            if i % 20 == 0:
+                print("Embedded sentences %d / %d." % (i, num_sentences))
+            if i >= num_sentences:
+                break
+
+            output = Embedding(x_tuple[i])
+            output = list(output)
+            output[2] = list(output[2])
+            
+            pair_characters_layer = []
+            for j in range(len(sentence) - 1):
+                this_pair = [sentence[j], sentence[j + 1]]
+                paired_output = Embedding(this_pair)
+                pair_characters_layer.append(torch.reshape(paired_output[1], (1, 1, 768)))
+            pair_characters_layer.append(torch.zeros((1, 1, 768), dtype = torch.float).to('cuda'))
+            output[2].append(torch.cat(pair_characters_layer, 1))
+            X = torch.cat((output[2][0], output[2][12], output[2][13]), 0).transpose(0, 1)
+            X = torch.reshape(X, (-1, 768))
+            X.to('cuda')
+            for j in range(output[0].shape[1]):
+                assert(torch.equal(X[j * 3 + 1], output[0][0][j]))
+            y = np.repeat(np.array(y_tuple[i], dtype = float), 3)
+#            print(y)
+            y = torch.FloatTensor(y).to('cuda')
+            y = torch.reshape(y, (-1, 1))
+            IntergratedTensor = torch.cat((X, y), 1)
+            assert(IntergratedTensor.shape[1] == 769)
+            df = pd.DataFrame(IntergratedTensor.cpu().detach().numpy())
+            outhandle.write(df.to_csv(header=False, index=False))
+    torch.cuda.empty_cache()    
+"""

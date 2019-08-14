@@ -1,6 +1,6 @@
 import torch
 import pandas as pd
-from ReadData import read_from_testing_data
+from ReadData import is_english, read_from_testing_data
 #from Embedding import Embedding
 from os import path
 #from sklearn.linear_model import LogisticRegression
@@ -336,14 +336,24 @@ def train_Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmb
 
 def prepare_script(training_csv, testing_csv, test_file, output_filename = 'result.txt', num_epochs = 60, batch_size = 96, lr = 0.005):
     model = Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbedding_Classifier(768 * 3, 2, 200)
-    train(training_csv, model, "", num_epochs, batch_size, lr, False)
-    
     test_data = load_from_csv(testing_csv, model.skip_rows, model.test_data_processor)
-    characters = open(test_file).read()
+    test_chars = open(test_file).read()
+    characters = []
+    hash_string = ""
+    for c in test_chars:
+        if is_english(c):
+            hash_string += c
+        else:
+            if hash_string != "":
+                characters.append(hash_string)
+                hash_string = ""        
+            characters.append(c)
 #    print(characters)
     x_list = read_from_testing_data(test_file)
 #    print(x_list)
     output = open(output_filename, "w+")
+    
+    train(training_csv, model, "", num_epochs, batch_size, lr, False)
     
     sentence_id = 0
     token_id = 0
