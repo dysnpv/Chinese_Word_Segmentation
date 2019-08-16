@@ -67,6 +67,9 @@ def read_from_training_data(filename):
             l -= 1
         i += 1
             
+    if len(x_list[len(x_list) - 1]) == 0:
+        del x_list[len(x_list) - 1]
+        del y_list[len(x_list) - 1]
     return x_list, y_list
 
 def read_from_testing_data(filename):
