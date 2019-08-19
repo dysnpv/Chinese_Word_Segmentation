@@ -14,6 +14,8 @@ def is_english(character):
         return True
     if '０' <= character and character <= '９':
         return True
+    if character == '○':
+        return True
     if character == '.' or character == '．' or character == '%' or character == '％':
         return True
     return False
@@ -115,7 +117,7 @@ def sentenceReader(filename, file_type):
         return x_list
     
 def ReadEnglish(filename):
-    characters = open(filename).read()
+    characters = open(filename, 'r', encoding = 'utf-8').read()
     split_tool = nltk.data.load('tokenizers/punkt/english.pickle')
     sentences = split_tool.tokenize(characters)
     tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case = False)

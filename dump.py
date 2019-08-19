@@ -7,10 +7,10 @@ https://www.kdnuggets.com/2017/11/building-wikipedia-text-corpus-nlp.html
 import sys
 from gensim.corpora import WikiCorpus
 
-def tokenize(content, token_min_len = 1, token_max_len = 15, lower = False):
+def tokenize(content, token_min_len = 1, token_max_len = 50, lower = False):
     #override original method in wikicorpus.py
     return [token.encode('utf8') for token in content.split() 
-           if len(token) <= 15 and not token.startswith('_')]
+           if len(token) <= 50 and not token.startswith('_')]
 
 def make_corpus(in_f, out_f, num_articles):
     """Convert Wikipedia xml dump file to text corpus"""

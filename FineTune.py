@@ -3,7 +3,7 @@ import torch
 import random
 from pytorch_transformers import BertTokenizer, BertModel
 from training import DropoutClassifier
-from ReadData import read_from_training_data
+from ReadData import is_english, read_from_training_data, read_from_testing_data, ReadEnglish
 
 
 class BertForWordSegmentation(torch.nn.Module):
@@ -11,6 +11,8 @@ class BertForWordSegmentation(torch.nn.Module):
         super(BertForWordSegmentation, self).__init__()
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case = False)
         self.model = BertModel.from_pretrained('bert-base-multilingual-cased', do_lower_case = False, output_hidden_states=True).to('cuda')
+#        self.tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
+#        self.model = BertModel.from_pretrained('bert-base-chinese', output_hidden_states=True).to('cuda')
         self.classifier = DropoutClassifier(768 * 2, 2).to('cuda')
         
     def forward(self, input_tokens, labels = None):
@@ -48,6 +50,11 @@ def data_loader(x_list, y_list):
 
 def train(train_file, num_sentences, num_epochs = 60, learning_rate = 0.005, do_save = True, save_path = 'FuneTuneModel.bin', eliminate_one = True):
     x_list, y_list = read_from_training_data(train_file)
+    z = list(zip(x_list, y_list))
+    random.shuffle(z)
+    x_tuple, y_tuple = zip(*z)
+    x_list = list(x_tuple)
+    y_list = list(y_tuple)
     cnt = 0
     
     l = len(x_list)
@@ -64,10 +71,12 @@ def train(train_file, num_sentences, num_epochs = 60, learning_rate = 0.005, do_
             continue
         cnt += 1
     
-    partition = int(min(len(x_list), num_sentences) * 3 / 4)
+    partition = int(min(len(x_list), num_sentences) * 4 / 5)
 
     
     model = BertForWordSegmentation()
+    best_model = model
+    best_acc = 0.0
     
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate) 
     for epoch in range(num_epochs):
@@ -93,6 +102,74 @@ def train(train_file, num_sentences, num_epochs = 60, learning_rate = 0.005, do_
                     correct_predictions += 1
                 num_characters += 1
         print('Test Accuracy: %.4f' % (correct_predictions * 1.0 / num_characters))
+        if correct_predictions * 1.0 / num_characters > best_acc:
+            best_acc = correct_predictions * 1.0 / num_characters
+            best_model = model
         torch.cuda.empty_cache()
     if do_save:
+        torch.save(best_model, 'best_model.bin')
         torch.save(model, save_path)
+
+def try_Chinese_model_directly_on_English(model_path, English_file):
+    model = torch.load(model_path)
+    
+    x_list, y_list = ReadEnglish(English_file)
+    z = list(zip(x_list, y_list))
+    random.shuffle(z)
+    x_tuple, y_tuple = zip(*z)
+    x_list = list(x_tuple)
+    y_list = list(y_tuple)
+    
+    num_characters = 0
+    correct_predictions = 0
+    test_loader = data_loader(x_list, y_list)
+    for x, y in test_loader:
+        z, _ = model(x)
+        for (i, output) in enumerate(z):
+            if y[i] == output.argmax():
+                correct_predictions += 1
+            num_characters += 1
+    print('Test Accuracy: %.4f' % (correct_predictions * 1.0 / num_characters))
+    
+def prepare_script(model_path, test_file, output_filename = 'FineTune_result.txt'):
+    model = torch.load(model_path)
+    
+    test_chars = open(test_file).read()
+    characters = []
+    hash_string = ""
+    for c in test_chars:
+        if is_english(c):
+            hash_string += c
+        else:
+            if hash_string != "":
+                characters.append(hash_string)
+                hash_string = ""        
+            characters.append(c)
+            
+    x_list = read_from_testing_data(test_file)
+    output = open(output_filename, "w+")
+
+    character_id = 0
+    for x in x_list:
+        if len(x) == 0:
+            print("Error! Sentecen with length 0!")
+            continue
+        if len(x) > 1:
+            z, _ = model(x)
+    #        print(z)
+    #        print(z.argmax())
+            for (i, prediction) in enumerate(z):
+                output.write(characters[character_id])
+                if prediction.argmax().item() == 1:
+                    output.write("  ")
+                character_id += 1
+        output.write(characters[character_id])
+        character_id += 1
+#       print("space: %d %c" % (character_id, characters[character_id]))
+        output.write("  ")
+        if characters[character_id] == '\n':
+#                print("end of line: %d %d %d" % (sentence_id, token_id, character_id)).
+            output.write("\n")
+            character_id += 1
+    torch.cuda.empty_cache()
+    output.close()
