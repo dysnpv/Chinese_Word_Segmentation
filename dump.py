@@ -18,13 +18,8 @@ def make_corpus(in_f, out_f, num_articles):
     wiki = WikiCorpus(in_f, tokenizer_func = tokenize)
     
     i = 0
-#    for vec in wiki:
     for text in wiki.get_texts():
-#        print(type(text))
-#        print(type(text[0]))
         output.write((bytes(' ', 'utf-8').join(text)).decode('utf-8') + '\n')
-
-#       print(vec)
         i += 1
         if (i % 100 == 0):
             print('Processed ' + str(i) + ' articles')

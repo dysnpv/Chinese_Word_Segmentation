@@ -21,7 +21,6 @@ class DropoutClassifier(torch.nn.Module):
         self.dropout1 = torch.nn.Dropout(p=0.2)
         self.linear1 = torch.nn.Linear(input_size, hidden_size)
         self.bn1 = torch.nn.BatchNorm1d(num_features=hidden_size)
-        #self.linear2 = nn.Linear(hidden_size, hidden_size)
         self.dropout2 = torch.nn.Dropout(p=0.5)
         self.linear3 = torch.nn.Linear(hidden_size, output_size)
 
@@ -30,7 +29,6 @@ class DropoutClassifier(torch.nn.Module):
         nextout = self.dropout1(nextout)
         nextout = self.linear1(nextout)
         nextout = nextout.clamp(min=0)
-        #nextout = self.linear2(nextout).clamp(min=0)
         nextout = self.dropout2(nextout)    
         nextout = self.linear3(nextout)
         return nextout
@@ -42,8 +40,6 @@ class DropoutClassifier(torch.nn.Module):
             return True
     
     def data_processer(self, t):
-#        print(t.shape)
-#        print(t)
         return t
 
 class Dropout_AverageWithFirstLayer_Classifier(DropoutClassifier):
@@ -54,16 +50,11 @@ class Dropout_AverageWithFirstLayer_Classifier(DropoutClassifier):
             return True
     
     def data_processer(self, t):
-#        print(t.shape)
-#        print(t)
         X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
-#        print(X.shape)
-#        print(y.shape)
         tensors_list = []
         for i in range(0, X.shape[0], 2):
             mean_x = torch.div(torch.add(X[i], X[i + 1]), 2)
             processed_tensor = torch.unsqueeze(torch.cat((mean_x, y[i]), 0), 0)
-#            print(processed_tensor.shape)
             assert(processed_tensor.shape == torch.Size([1, 769]))
             tensors_list.append(processed_tensor)
         return torch.cat(tensors_list, 0)
@@ -76,32 +67,22 @@ class Dropout_AverageLastFourLayers_Classifier(DropoutClassifier):
             return True
         
     def data_processer(self, t):
-#        print(t.shape)
-#        print(t)
         X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
-#        print(X.shape)
-#        print(y.shape)
         tensors_list = []
         for i in range(0, X.shape[0], 4):
             mean_x = (X[i] + X[i + 1] + X[i + 2] + X[i + 3]) / 4
             processed_tensor = torch.unsqueeze(torch.cat((mean_x, y[i]), 0), 0)
-#            print(processed_tensor.shape)
             assert(processed_tensor.shape == torch.Size([1, 769]))
             tensors_list.append(processed_tensor)
         return torch.cat(tensors_list, 0)
     
 class Dropout_ConcatenateWithFirstLayer_Classifier(Dropout_AverageWithFirstLayer_Classifier):
     def data_processer(self, t):
-#        print(t.shape)
-#        print(t)
         X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
-#        print(X.shape)
-#        print(y.shape)
         tensors_list = []
         for i in range(0, X.shape[0], 2):
             concatenated_x = torch.cat((X[i], X[i + 1]), 0)
             processed_tensor = torch.unsqueeze(torch.cat((concatenated_x, y[i]), 0), 0)
-#            print(processed_tensor.shape)
             assert(processed_tensor.shape == torch.Size([1, 768 * 2 + 1]))
             tensors_list.append(processed_tensor)
         return torch.cat(tensors_list, 0)    
@@ -114,21 +95,15 @@ class Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_Classifier(Drop
             return True
     
     def data_processer(self, t):
-#        print(t.shape)
-#        print(t)
         X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
-#        print(X.shape)
-#        print(y.shape)
         tensors_list = []
         the_endofline_tensor = torch.zeros(768, dtype = torch.float)
         for i in range(0, X.shape[0] - 2, 2):
             if torch.equal(X[i + 2], the_endofline_tensor):
-#                print('Working')
                 continue
             mean_x1 = torch.div(torch.add(X[i], X[i + 1]), 2)
             mean_x2 = torch.div(torch.add(X[i + 2], X[i + 3]), 2)
             processed_tensor = torch.unsqueeze(torch.cat((mean_x1, mean_x2, y[i]), 0), 0)
-#            print(processed_tensor.shape)
             assert(processed_tensor.shape == torch.Size([1, 768 * 2 + 1]))
             tensors_list.append(processed_tensor)
         return torch.cat(tensors_list, 0)
@@ -141,20 +116,14 @@ class Dropout_AverageWithFirstLayer_WithPairEmbedding_Classifier(DropoutClassifi
             return True
     
     def data_processer(self, t):
-#        print(t.shape)
-#        print(t)
         X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
-#        print(X.shape)
-#        print(y.shape)
         tensors_list = []
         the_endofline_tensor = torch.zeros(768, dtype = torch.float)
         for i in range(0, X.shape[0] - 3, 3):
             if torch.equal(X[i + 2], the_endofline_tensor):
-#                print('Working')
                 continue
             mean_x = torch.div(torch.add(X[i], X[i + 1]), 2)
             processed_tensor = torch.unsqueeze(torch.cat((mean_x, X[i + 2], y[i]), 0), 0)
-#            print(processed_tensor.shape)
             assert(processed_tensor.shape == torch.Size([1, 768 * 2 + 1]))
             tensors_list.append(processed_tensor)
         return torch.cat(tensors_list, 0)
@@ -167,21 +136,15 @@ class Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbeddi
             return True
     
     def data_processer(self, t):
-#        print(t.shape)
-#        print(t)
         X, y = torch.split(t, [t.shape[1] - 1, 1], 1)
-#        print(X.shape)
-#        print(y.shape)
         tensors_list = []
         the_endofline_tensor = torch.zeros(768, dtype = torch.float)
         for i in range(0, X.shape[0] - 3, 3):
             if torch.equal(X[i + 2], the_endofline_tensor):
-#                print('Working')
                 continue
             mean_x1 = torch.div(torch.add(X[i], X[i + 1]), 2)
             mean_x2 = torch.div(torch.add(X[i + 3], X[i + 4]), 2)
             processed_tensor = torch.unsqueeze(torch.cat((mean_x1, mean_x2, X[i + 2], y[i]), 0), 0)
-#            print(processed_tensor.shape)
             assert(processed_tensor.shape == torch.Size([1, 768 * 3 + 1]))
             tensors_list.append(processed_tensor)
         return torch.cat(tensors_list, 0)
@@ -192,12 +155,10 @@ class Dropout_AverageWithFirstLayer_ConcatenateWithNextCharacter_WithPairEmbeddi
         the_endofline_tensor = torch.zeros(768, dtype = torch.float)     
         for i in range(0, X.shape[0] - 3, 3):
             if torch.equal(X[i + 2], the_endofline_tensor):
-#                print('Working')
                 continue
             mean_x1 = torch.div(torch.add(X[i], X[i + 1]), 2)
             mean_x2 = torch.div(torch.add(X[i + 3], X[i + 4]), 2)
             processed_tensor = torch.unsqueeze(torch.cat((mean_x1, mean_x2, X[i + 2]), 0), 0)
-#            print(processed_tensor.shape)
             assert(processed_tensor.shape == torch.Size([1, 768 * 3]))
             tensors_list.append(processed_tensor)
         return torch.cat(tensors_list, 0)
@@ -229,8 +190,6 @@ def train(csv_filename, classifier, test_csv_filename = "", num_epochs = 60, bat
         batch_cnt = 0
         for x_tensor, y_tensor in train_loader:
             optimizer.zero_grad()
-#            print(x_tensor.shape)
-#            print(y_tensor.shape)
             z = classifier(x_tensor)
             loss_size = loss(z, y_tensor.long())
             loss_size.backward()
@@ -292,9 +251,7 @@ def prepare_script(training_csv, testing_csv, test_file, output_filename = 'resu
                 characters.append(hash_string)
                 hash_string = ""        
             characters.append(c)
-#    print(characters)
     x_list = read_from_testing_data(test_file)
-#    print(x_list)
     output = open(output_filename, "w+")
     
     train(training_csv, model, "", num_epochs, batch_size, lr, False)
@@ -306,18 +263,14 @@ def prepare_script(training_csv, testing_csv, test_file, output_filename = 'resu
         # if this is the last token:
         while token_id == len(x_list[sentence_id]) - 1:
             output.write(characters[character_id])
-#            print("space: %d %c" % (character_id, characters[character_id]))
             output.write("  ")
             if characters[character_id + 1] == '\n':
-#                print("end of line: %d %d %d" % (sentence_id, token_id, character_id))
                 output.write("\n")
                 character_id += 1
             token_id = 0
             sentence_id += 1
             character_id += 1
         z = model(x_tensor)
-#        print(z)
-#        print(z.argmax())
         output.write(characters[character_id])
         if z.argmax().item() == 1:
             output.write("  ")

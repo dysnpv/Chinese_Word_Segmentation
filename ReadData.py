@@ -48,9 +48,7 @@ def read_from_training_data(filename):
                     x_list.append([])
                     y_list.append([])
                 continue
-            
-
-            
+        
             y_list[sentence_cnt].append((characters[i + 1] == ' '))
             x_list[sentence_cnt].append(characters[i])
             
@@ -79,11 +77,8 @@ def read_from_testing_data(filename):
     sentence_cnt = 0
     x_list = [[]]
     english_before = False
-#    map_for_hash = {}
-#    hash_string = ""
     for i in range(len(characters)):
         if is_english(characters[i]):
- #           hash_string += characters[i]
             if english_before:
                 continue
             else:
@@ -92,9 +87,7 @@ def read_from_testing_data(filename):
         else:
             if english_before:
                 x_list[sentence_cnt].append('#')
-#                map_for_hash[(sentence_cnt, len(x_list[sentence_cnt]) - 1)] = hash_string
                 english_before = False
-#                hash_string = ""
         if characters[i] == '\n':
             if not len(x_list[sentence_cnt]) == 0:
                 sentence_cnt += 1
@@ -128,34 +121,39 @@ def ReadEnglish(filename):
         if '#' in sentences[i]:
             del sentences[i]
             continue
-        # We just discard sentences that contain names:
-        if '.' in sentences[i][:(len(sentences[i]) - 1)]:
-            del sentences[i]
-            continue
-        processed_sentence = ""
-        for j in range(len(sentences[i])):
-            if sentences[i][j] == ',' or sentences[i][j] == '.' or sentences[i][j] == ':' or sentences[i][j] == ';' or sentences[i][j] == '"':
-                processed_sentence = processed_sentence + ' ' + sentences[i][j] + ' '
-            else:
-                processed_sentence += sentences[i][j]
-#        without_space = sentences[i].replace(" ", "")
-#        print(without_space)
-#        print(nltk.word_tokenize(sentences[i]))
         x_list.append([])
         y_list.append([])
         tokenized_text = tokenizer.tokenize(sentences[i])
         x_list[i] = tokenized_text
-#        print(tokenized_text)
-        pos = 0
-        for j in range(len(tokenized_text) - 1):
-            length = len(tokenized_text[j].replace('#', ''))
-            pos += length
-            if processed_sentence[pos] == ' ' or processed_sentence[pos] == '\n':
-                y_list[i].append(True)
-                while processed_sentence[pos] == ' ' or processed_sentence[pos] == '\n':
-                    pos += 1
-            else:
+        for j in range(1, len(tokenized_text)):
+            if len(tokenized_text) >= 2 and tokenized_text[j][:2] == "##":
                 y_list[i].append(False)
+            else:
+                y_list[i].append(True)
         y_list[i].append(True)
+        i += 1
+    i = 0
+    l = len(x_list)
+    while i < l:
+        if(len(x_list[i])) > 512:
+            del x_list[i]
+            del y_list[i]
+            l -= 1
+            continue
+        
+        if(len(x_list[i])) == 1:
+            del x_list[i]
+            del y_list[i]
+            l -= 1
+            if i < l:
+                del x_list[i]
+                del y_list[i]
+                l -= 1
+            if i >= 1:
+                del x_list[i - 1]
+                del y_list[i - 1]
+                i -= 1
+                l -= 1
+            continue
         i += 1
     return x_list, y_list

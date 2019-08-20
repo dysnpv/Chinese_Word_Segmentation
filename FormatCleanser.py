@@ -12,15 +12,13 @@ def apos_cleanser(match_obj):
         cnt = 3
     return string[i : (len(string) - i)]
 
-def empty_cleanser(match_obj):
-    return ""
-
 def format_cleanse(input_file, output_file):
     string = open(input_file, 'r', encoding='utf-8').read()
     string = re.sub("'{2,5}.*?'{2,5}", apos_cleanser, string)
-    string = re.sub("={2,6}.*?={2,6}", empty_cleanser, string)
-    string = re.sub("\*+ ", empty_cleanser, string)
-    string = re.sub("\#+ ", empty_cleanser, string)
+    string = re.sub("={2,6}.*?={2,6}", "", string)
+    string = re.sub("\*+ ", "", string)
+    string = re.sub("\#+ ", "", string)
+    string = re.sub("\#+ ", "", string)
+    string = re.sub("  +", " ", string)
     output = open(output_file, "w+", encoding='utf-8')
-#    print(string[:100])
     output.write(string)
