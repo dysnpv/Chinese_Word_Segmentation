@@ -110,8 +110,9 @@ def sentenceReader(filename, file_type):
         return x_list
     
 def ReadEnglish(filename):
-    characters = open(filename, 'r', encoding = 'utf-8').read()
+    characters = open(filename, 'r', encoding = 'utf-8').read()    
     split_tool = nltk.data.load('tokenizers/punkt/english.pickle')
+#    split_tool = nltk.data.load('tokenizers/punkt/finnish.pickle')
     sentences = split_tool.tokenize(characters)
     tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case = False)
     i = 0

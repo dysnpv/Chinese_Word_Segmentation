@@ -106,8 +106,8 @@ def prepare_xy_list(filename, num_sentences, language = 'Chinese', eliminate_one
     
     return x_list[:num_sentences], y_list[:num_sentences]
 
-def train(train_file, num_sentences, model, num_epochs, learning_rate, do_save, save_path, eliminate_one):
-    x_list, y_list = prepare_xy_list(train_file, num_sentences, 'Chinese', eliminate_one)
+def train(train_file, num_sentences, model, num_epochs, learning_rate, do_save, save_path, eliminate_one, language = 'Chinese'):
+    x_list, y_list = prepare_xy_list(train_file, num_sentences, language, eliminate_one)
     
     partition = int(len(x_list) * 4 / 5)
 
@@ -285,12 +285,13 @@ def train_on_two_languages(train_chinese_file, num_chinese_sentences, train_engl
         torch.save(best_english_model, save_path + '_English.bin')
         torch.save(best_overall_model, save_path + '_Overall.bin')
         
-def train_2(train_file, num_sentences, num_epochs = 15, learning_rate = 0.005, do_save = True, save_path = 'FineTuneModel.bin', eliminate_one = True):
+def train_2(train_file, num_sentences, num_epochs = 15, learning_rate = 0.005, do_save = True, save_path = 'FineTuneModel.bin', eliminate_one = True, language = 'Chinese'):
     model = BertForWordSegmentation()
-    train(train_file, num_sentences, model, num_epochs, learning_rate, do_save, save_path, eliminate_one)
+    train(train_file, num_sentences, model, num_epochs, learning_rate, do_save, save_path, eliminate_one, language)
     torch.cuda.empty_cache()
     
-def train_4(train_file, num_sentences, num_epochs = 15, learning_rate = 0.005, do_save = True, save_path = 'FineTuneModel.bin', eliminate_one = True):
+def train_4(train_file, num_sentences, num_epochs = 15, learning_rate = 0.005, do_save = True, save_path = 'FineTuneModel.bin', eliminate_one = True, language = 'Chinese'):
     model = BertForWordSegmentation_4()
-    train(train_file, num_sentences, model, num_epochs, learning_rate, do_save, save_path, eliminate_one)
+    train(train_file, num_sentences, model, num_epochs, learning_rate, do_save, save_path, eliminate_one, language)
     torch.cuda.empty_cache()
+  
